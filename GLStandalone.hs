@@ -3,9 +3,8 @@ module Main where
 import Foreign
 import Foreign.C
 
-foreign import ccall safe "glsa" glsa :: CString -> IO ()
+foreign import ccall safe "glsa" glsa :: IO ()
 
 main = do
   putStrLn "Haskell started"
-  msg <- newCString "Motherfucka!"
-  glsa msg
+  glsa
