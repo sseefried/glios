@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export IOSSIMDIR="$HOME/Library/Application Support/iPhone Simulator/7.0/Applications"
+export IOSSIMDIR="$HOME/Library/Application Support/iPhone Simulator/7.0.3/Applications"
 
 if [ $# -lt 1 ]; then
   echo "Usage: $(basename $0) <executable>"
@@ -69,5 +69,5 @@ echo "To view in iPhone Simulator:"
 echo "  open -a \"iPhone Simulator\""
 echo 
 echo "Logs are in:"
-echo "  tail -f ~/Library/Logs/iOS\ Simulator/7.0/system.log"
+echo "  tail -f ~/Library/Logs/iOS\ Simulator/7.0.3/system.log"
 

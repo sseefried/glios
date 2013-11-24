@@ -1,11 +1,32 @@
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
 #import "EAGLView.h"
+#import "GLiOS_stub.h"
+
+@interface GLiOSView : EAGLView
+@end
+
+@implementation GLiOSView
+
+- (void)touchesBegan:(NSSet *)touches withEvent:(UIEvent *)event {
+  UITouch *touch = [[event allTouches] anyObject];
+  CGPoint loc = [touch locationInView:self];
+  gliosHookMouseDown(loc.x,loc.y);
+}
+
+- (void)handlePan:(UIPanGestureRecognizer *)sender
+{
+  CGPoint loc = [sender locationInView:self];
+  gliosHookMotion(loc.x,loc.y);
+}
+
+
+@end
 
 /* sseefried: Ick. Global variables required to create this API */
 
 NSAutoreleasePool *gliosPool;
-EAGLView          *gliosEAGLView;
+GLiOSView         *gliosView;
 EAGLContext       *gliosEAGLContext;
 NSDate            *gliosStartTime;
 
@@ -16,19 +37,19 @@ double gliosElapsedTime(void) {
 }
 
 int gliosGetWindowHeight(void) {
-  CGRect rect = [ gliosEAGLView bounds ];
+  CGRect rect = [ gliosView bounds ];
   return rect.size.height;
 }
 
 int gliosGetWindowWidth(void) {
-  CGRect rect = [ gliosEAGLView bounds ];
+  CGRect rect = [ gliosView bounds ];
   return rect.size.width;
 }
 
 void gliosDraw(void) {
-  [ gliosEAGLView setFramebuffer ];
+  [ gliosView setFramebuffer ];
   gliosDisplayCallback();
-  [ gliosEAGLView presentFramebuffer ];
+  [ gliosView presentFramebuffer ];
 }
 
 void gliosSetDisplayCallback(void (*displayCallback)(void)) {
@@ -44,8 +65,14 @@ void gliosInit(void) {
 
   gliosPool = [[NSAutoreleasePool alloc] init];
   CGRect bounds  = [ [ UIScreen mainScreen ] bounds ];
-  gliosEAGLView = [ [ [ EAGLView alloc ] initWithFrame: bounds ] autorelease ];
+  gliosView = [ [ [ GLiOSView alloc ] initWithFrame: bounds ] autorelease ];
   gliosEAGLContext = [ [ [ EAGLContext alloc ] initWithAPI:kEAGLRenderingAPIOpenGLES1 ] autorelease ];
+
+  UIPanGestureRecognizer *pan = [[UIPanGestureRecognizer alloc] initWithTarget:gliosView
+                                                                action:@selector(handlePan:)];
+  [gliosView addGestureRecognizer:pan];
+  [pan release];
+
 
   if (!gliosEAGLContext) {
     NSLog(@"Failed to create ES context");
@@ -53,8 +80,8 @@ void gliosInit(void) {
     NSLog(@"Failed to set ES context current");
   }
 
-  [ gliosEAGLView setContext: gliosEAGLContext ];
-  [ gliosEAGLView setFramebuffer ];
+  [ gliosView setContext: gliosEAGLContext ];
+  [ gliosView setFramebuffer ];
 }
 
 void gliosMainLoop(void)
@@ -66,7 +93,7 @@ void gliosMainLoop(void)
 
 // Precondition: gliosInit must have been called.
 void gliosPostRedisplay(void) {
-  [ gliosEAGLView setNeedsDisplayInRect: [ [ UIScreen mainScreen ] bounds ] ];
+  [ gliosView setNeedsDisplayInRect: [ [ UIScreen mainScreen ] bounds ] ];
 }
 
 /*******************************************************************/
@@ -88,7 +115,7 @@ void gliosPostRedisplay(void) {
 //
 - ( BOOL ) application: ( UIApplication * ) application
            didFinishLaunchingWithOptions: ( NSDictionary * ) launchOptions {
-  self.eaglView  = gliosEAGLView;
+  self.eaglView  = gliosView;
 
   /*
    * It does not seem possible to successfully create a main window unless it is
